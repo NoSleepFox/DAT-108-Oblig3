@@ -206,3 +206,55 @@ class KonkurranseController {
 const formelement = document.forms["nydeltager"];
 const tabellelement = document.getElementById("deltagere");
 new KonkurranseController(formelement, tabellelement);
+
+class FilterController{
+  #tabellelement;
+  #filterSpan;
+  /**
+   * @param{HTMLFormElement}
+   * @param{HTMLTableElement}
+   */
+
+
+constructor(filterelement,tabellelement){
+  this.#tabellelement = tabellelement;
+  this.#filterSpan = filterelement.querySelector("span");
+
+  filterelement.addEventListener("submit", (event) =>
+      this.#aktiverFilter(event),);
+  filterelement.addEventListener("reset", ()=> this.#tomFilter());
+}
+/**
+*@param{SubmitEvent}
+*/
+
+#aktiverFilter(event){
+  event.preventDefault();
+
+  const formData = new FormData(event.target);
+  const tekst = formData.get("filtertekst");
+  const kolonne = Number(formData.get("felt"));
+
+  let regex;
+  try{
+    regex = new RegExp(tekst);
+  } catch{
+    this.#filterSpan.textContent = "Ugyldig mønster";
+    return;
+  }
+  for (const rad of this.#tabellelement.tBodies[0].rows){
+    const treff = regex.test(rad.cells[kolonne].textContent);
+    rad.classList.toggle("hidden", !treff);
+  }
+  const feltnavn = kolonne === 0 ? "startnummer" : "navn";
+  this.#filterSpan.textContent = `Mønster "${tekst}" på felt "${feltnavn}"`
+}
+
+#tomFilter(){
+  for(const rad of this.#tabellelement.tBodies[0].rows){
+    rad.classList.remove("hidden");
+  }
+  this.#filterSpan.textContent = "Ingen";
+}
+}
+new FilterController(document.forms["filter"],tabellelement);
