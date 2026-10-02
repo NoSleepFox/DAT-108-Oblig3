@@ -29,9 +29,6 @@ class KonkurranseController {
         this.#oppdaterLopstid(rad);
       }
     });
-
-    this.#fyllListe();
-    this.#validerStartnummer(startnummerInput);
   }
 
   /**
@@ -58,9 +55,7 @@ class KonkurranseController {
    * @param {HTMLInputElement} target
    */
   #validerStartnummer(target) {
-    console.log(target.validity);
-
-    let errormessage;
+    let errormessage = "";
     if (this.#startnummerFinnes(target.valueAsNumber)) {
       errormessage = "Startnummer er i bruk";
     } else if (target.validity.valueMissing) {
@@ -78,16 +73,12 @@ class KonkurranseController {
    * @param {HTMLInputElement} target
    */
   #validerNavn(target) {
-    console.log(target.validity);
-
-    let errormessage;
-    if (target.validity.patternMismatch) {
+    let errormessage = "";
+    if (target.validity.valueMissing) {
+      errormessage = "Navn mangler";
+    } else if (target.validity.patternMismatch) {
       errormessage =
         "Navn må bestå av ett eller flere delnavn skilt av mellomrom eller bindestrek og hvert delnavn må starte med stor forbokstav etterfulgt av kun små bokstaver";
-    } else if (target.validity.valueMissing) {
-      errormessage = "Navn mangler";
-    } else if (target.validity.customError) {
-      errormessage = "";
     }
     target.setCustomValidity(errormessage);
     target.title = errormessage; // For Chromium baserte nettlesere
@@ -177,37 +168,13 @@ class KonkurranseController {
     );
     return element !== null;
   }
-
-  /**
-   * Hjelpemetode som kan fjernes i endelig løsning.
-   * Fyller inn data å arbeide under utvikling av applikasjonen
-   */
-  #fyllListe() {
-    this.#tabellelement.classList.remove("hidden");
-
-    const liste = [
-      { startnummer: 567, navn: "Per Persen" },
-      { startnummer: 127, navn: "Anne Annesen" },
-      { startnummer: 838, navn: "Jo Josen" },
-      { startnummer: 57, navn: "Gro Grosen" },
-      { startnummer: 9, navn: "Hanne Hannesen" },
-      { startnummer: 65, navn: "Jo Josen" },
-      { startnummer: 7476, navn: "Mette Metteson" },
-    ];
-
-    for (const deltager of liste) {
-      if (!this.#startnummerFinnes(deltager.startnummer)) {
-        this.#visDeltager(deltager);
-      }
-    }
-  }
 }
 
 const formelement = document.forms["nydeltager"];
 const tabellelement = document.getElementById("deltagere");
 new KonkurranseController(formelement, tabellelement);
 
-class FilterController{
+class FilterController {
   #tabellelement;
   #filterSpan;
   /**
@@ -215,46 +182,46 @@ class FilterController{
    * @param{HTMLTableElement}
    */
 
+  constructor(filterelement, tabellelement) {
+    this.#tabellelement = tabellelement;
+    this.#filterSpan = filterelement.querySelector("span");
 
-constructor(filterelement,tabellelement){
-  this.#tabellelement = tabellelement;
-  this.#filterSpan = filterelement.querySelector("span");
-
-  filterelement.addEventListener("submit", (event) =>
-      this.#aktiverFilter(event),);
-  filterelement.addEventListener("reset", ()=> this.#tomFilter());
-}
-/**
-*@param{SubmitEvent}
-*/
-
-#aktiverFilter(event){
-  event.preventDefault();
-
-  const formData = new FormData(event.target);
-  const tekst = formData.get("filtertekst");
-  const kolonne = Number(formData.get("felt"));
-
-  let regex;
-  try{
-    regex = new RegExp(tekst);
-  } catch{
-    this.#filterSpan.textContent = "Ugyldig mønster";
-    return;
+    filterelement.addEventListener("submit", (event) =>
+      this.#aktiverFilter(event),
+    );
+    filterelement.addEventListener("reset", () => this.#tomFilter());
   }
-  for (const rad of this.#tabellelement.tBodies[0].rows){
-    const treff = regex.test(rad.cells[kolonne].textContent);
-    rad.classList.toggle("hidden", !treff);
-  }
-  const feltnavn = kolonne === 0 ? "startnummer" : "navn";
-  this.#filterSpan.textContent = `Mønster "${tekst}" på felt "${feltnavn}"`
-}
+  /**
+   *@param{SubmitEvent}
+   */
 
-#tomFilter(){
-  for(const rad of this.#tabellelement.tBodies[0].rows){
-    rad.classList.remove("hidden");
+  #aktiverFilter(event) {
+    event.preventDefault();
+
+    const formData = new FormData(event.target);
+    const tekst = formData.get("filtertekst");
+    const kolonne = Number(formData.get("felt"));
+
+    let regex;
+    try {
+      regex = new RegExp(tekst);
+    } catch {
+      this.#filterSpan.textContent = "Ugyldig mønster";
+      return;
+    }
+    for (const rad of this.#tabellelement.tBodies[0].rows) {
+      const treff = regex.test(rad.cells[kolonne].textContent);
+      rad.classList.toggle("hidden", !treff);
+    }
+    const feltnavn = kolonne === 0 ? "startnummer" : "navn";
+    this.#filterSpan.textContent = `Mønster "${tekst}" på felt "${feltnavn}"`;
   }
-  this.#filterSpan.textContent = "Ingen";
+
+  #tomFilter() {
+    for (const rad of this.#tabellelement.tBodies[0].rows) {
+      rad.classList.remove("hidden");
+    }
+    this.#filterSpan.textContent = "Ingen";
+  }
 }
-}
-new FilterController(document.forms["filter"],tabellelement);
+new FilterController(document.forms["filter"], tabellelement);
